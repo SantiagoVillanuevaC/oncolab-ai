@@ -1,0 +1,635 @@
+{% extends "core/base.html" %}
+
+{% block title %}Nuevo Diagnóstico — OncoLab AI{% endblock %}
+
+{% block nav_nuevo %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ─── Breadcrumb ─── */
+    .breadcrumb-item + .breadcrumb-item::before { color: var(--texto-secundario); }
+
+    /* ─── Panel izquierdo informativo ─── */
+    .panel-info {
+        background: linear-gradient(160deg, #0D47A1 0%, #1565C0 60%, #1976D2 100%);
+        border-radius: 16px;
+        padding: 2rem 1.8rem;
+        color: #fff;
+        position: sticky;
+        top: 85px;
+        box-shadow: 0 6px 30px rgba(13,71,161,.3);
+        overflow: hidden;
+    }
+
+    .panel-info::before {
+        content: '';
+        position: absolute;
+        top: -50px; right: -50px;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.07);
+    }
+
+    .panel-info-titulo {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        position: relative;
+    }
+
+    .panel-info-sub {
+        font-size: 0.82rem;
+        color: rgba(255,255,255,.75);
+        margin-bottom: 1.5rem;
+        line-height: 1.55;
+        position: relative;
+    }
+
+    .panel-feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1.5rem;
+        position: relative;
+    }
+
+    .panel-feature-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 0.83rem;
+        color: rgba(255,255,255,.88);
+        margin-bottom: 0.75rem;
+        line-height: 1.45;
+    }
+
+    .panel-feature-list li .num {
+        background: rgba(255,255,255,.2);
+        border-radius: 50%;
+        width: 22px; height: 22px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .panel-separador {
+        border: none;
+        border-top: 1px solid rgba(255,255,255,.2);
+        margin: 1.2rem 0;
+    }
+
+    .panel-alerta {
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.25);
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+        font-size: 0.78rem;
+        color: rgba(255,255,255,.85);
+        display: flex;
+        gap: 8px;
+        position: relative;
+        line-height: 1.5;
+    }
+
+    /* ─── Panel derecho (formulario) ─── */
+    .form-card {
+        background: var(--blanco);
+        border: 1px solid var(--gris-borde);
+        border-radius: 16px;
+        box-shadow: var(--sombra-card);
+        overflow: hidden;
+    }
+
+    .form-card-header {
+        background: #F8FAFF;
+        border-bottom: 1px solid var(--gris-borde);
+        padding: 1.3rem 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .form-card-header-icon {
+        width: 44px; height: 44px;
+        background: var(--azul-suave);
+        border-radius: 11px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--azul-medico);
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .form-card-body { padding: 1.8rem; }
+
+    /* ─── Inputs de características ─── */
+    .grupo-caracteristica {
+        margin-bottom: 1.2rem;
+    }
+
+    .label-caracteristica {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--texto-principal);
+        margin-bottom: 0.4rem;
+    }
+
+    .label-num {
+        background: var(--azul-suave);
+        color: var(--azul-medico);
+        font-size: 0.7rem;
+        font-weight: 700;
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .label-tecnico {
+        font-size: 0.72rem;
+        color: #9E9E9E;
+        font-weight: 400;
+        font-family: 'Courier New', monospace;
+    }
+
+    .input-clinico {
+        border: 1.5px solid var(--gris-borde);
+        border-radius: 10px;
+        padding: 0.65rem 1rem;
+        font-size: 0.9rem;
+        color: var(--texto-principal);
+        background: #FAFBFF;
+        transition: border-color .2s, box-shadow .2s, background .2s;
+        width: 100%;
+    }
+
+    .input-clinico:focus {
+        border-color: var(--azul-claro);
+        box-shadow: 0 0 0 3px rgba(30,136,229,.15);
+        background: #fff;
+        outline: none;
+    }
+
+    .input-clinico::placeholder { color: #BDBDBD; }
+
+    .input-clinico.is-invalid {
+        border-color: var(--rojo-alerta);
+        box-shadow: 0 0 0 3px rgba(198,40,40,.12);
+    }
+
+    .input-hint {
+        font-size: 0.73rem;
+        color: #9E9E9E;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* ─── Separador de secciones ─── */
+    .seccion-titulo {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--texto-secundario);
+        padding: 0.4rem 0 0.8rem;
+        border-bottom: 1px solid var(--gris-borde);
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .seccion-titulo::before {
+        content: '';
+        width: 3px; height: 14px;
+        background: var(--azul-medico);
+        border-radius: 2px;
+        display: inline-block;
+    }
+
+    /* ─── Botón submit ─── */
+    .btn-submit-ia {
+        background: linear-gradient(135deg, #0D47A1, #1E88E5);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.05rem;
+        padding: 0.85rem 2rem;
+        width: 100%;
+        box-shadow: 0 5px 20px rgba(13,71,161,.35);
+        transition: box-shadow .2s, transform .2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        letter-spacing: 0.3px;
+    }
+
+    .btn-submit-ia:hover {
+        color: #fff;
+        box-shadow: 0 8px 28px rgba(13,71,161,.5);
+        transform: translateY(-2px);
+    }
+
+    .btn-submit-ia:active { transform: translateY(0); }
+
+    .btn-limpiar {
+        color: var(--texto-secundario);
+        background: transparent;
+        border: 1.5px solid var(--gris-borde);
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 0.8rem 1.5rem;
+        width: 100%;
+        transition: all .2s;
+    }
+
+    .btn-limpiar:hover {
+        background: var(--gris-fondo);
+        color: var(--texto-principal);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 991px) {
+        .panel-info { position: static; margin-bottom: 1.5rem; }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb breadcrumb-oncolab">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fa-solid fa-house me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item active">Nuevo Diagnóstico</li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+
+    <!-- ═══ COLUMNA IZQUIERDA: Panel informativo ═══ -->
+    <div class="col-12 col-lg-4">
+        <div class="panel-info">
+            <h2 class="panel-info-titulo">
+                <i class="fa-solid fa-dna me-2" style="font-size:1rem; opacity:.8;"></i>
+                Análisis Citológico
+            </h2>
+            <p class="panel-info-sub">
+                Ingresa las 8 características de la biopsia. El modelo K-Means determinará el clúster
+                (Benigno o Maligno) al que pertenece la muestra.
+            </p>
+
+            <!-- Lista de características -->
+            <ul class="panel-feature-list">
+                <li>
+                    <span class="num">1</span>
+                    <span><strong>Perímetro Peor</strong> — La mayor medida del perímetro del núcleo celular</span>
+                </li>
+                <li>
+                    <span class="num">2</span>
+                    <span><strong>Área Peor</strong> — Área máxima del núcleo registrada</span>
+                </li>
+                <li>
+                    <span class="num">3</span>
+                    <span><strong>Radio Peor</strong> — Distancia máxima del centro al perímetro</span>
+                </li>
+                <li>
+                    <span class="num">4</span>
+                    <span><strong>Puntos Cóncavos Promedio</strong> — Promedio de partes cóncavas del contorno</span>
+                </li>
+                <li>
+                    <span class="num">5</span>
+                    <span><strong>Puntos Cóncavos Peor</strong> — Valor máximo de puntos cóncavos</span>
+                </li>
+                <li>
+                    <span class="num">6</span>
+                    <span><strong>Concavidad Promedio</strong> — Severidad promedio de las concavidades</span>
+                </li>
+                <li>
+                    <span class="num">7</span>
+                    <span><strong>Perímetro Promedio</strong> — Valor promedio del perímetro nuclear</span>
+                </li>
+                <li>
+                    <span class="num">8</span>
+                    <span><strong>Área Promedio</strong> — Valor promedio del área nuclear</span>
+                </li>
+            </ul>
+
+            <hr class="panel-separador">
+
+            <div class="panel-alerta">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#FFD54F; margin-top:2px; flex-shrink:0;"></i>
+                <span>
+                    Herramienta de <strong style="color:#fff;">apoyo académico</strong>. Los resultados
+                    no constituyen un diagnóstico médico definitivo. Consulte siempre a un especialista.
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ═══ COLUMNA DERECHA: Formulario ═══ -->
+    <div class="col-12 col-lg-8">
+        <div class="form-card">
+
+            <!-- Header del formulario -->
+            <div class="form-card-header">
+                <div class="form-card-header-icon">
+                    <i class="fa-solid fa-flask-vial"></i>
+                </div>
+                <div>
+                    <h4 style="font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:700; margin:0; color:var(--texto-principal);">
+                        Ingreso de Datos Citológicos
+                    </h4>
+                    <p style="font-size:0.78rem; color:var(--texto-secundario); margin:0;">
+                        Completa los 8 campos con los valores obtenidos de la biopsia de núcleo celular
+                    </p>
+                </div>
+            </div>
+
+            <!-- Body del formulario -->
+            <div class="form-card-body">
+                <form method="POST" action="{% url 'nuevo_diagnostico' %}" id="formDiagnostico" novalidate>
+                    {% csrf_token %}
+
+                    <!-- ID del paciente (opcional) -->
+                    <div class="grupo-caracteristica mb-3">
+                        <label class="label-caracteristica" for="id_paciente">
+                            <i class="fa-solid fa-id-badge" style="color:var(--azul-medico);"></i>
+                            ID del Paciente
+                            <span class="label-tecnico">id_paciente</span>
+                            <span class="badge bg-secondary ms-auto" style="font-size:.65rem; font-weight:500;">Opcional</span>
+                        </label>
+                        <input type="text"
+                               id="id_paciente"
+                               name="id_paciente"
+                               class="input-clinico"
+                               placeholder="Ej: PAC-2024-001"
+                               value="{{ form.id_paciente.value|default:'' }}">
+                        <div class="input-hint">
+                            <i class="fa-regular fa-circle-question"></i>
+                            Identificador interno para el historial (puede dejarse vacío)
+                        </div>
+                    </div>
+
+                    <!-- ── SECCIÓN: Medidas "Peor" ── -->
+                    <div class="seccion-titulo">
+                        <span>Características de Valor Peor (Máximo)</span>
+                    </div>
+
+                    <div class="row g-3 mb-2">
+
+                        <!-- 1. Perímetro Peor -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="perimeter_worst">
+                                    <span class="label-num">1</span>
+                                    Perímetro Peor
+                                    <span class="label-tecnico">perimeter_worst</span>
+                                </label>
+                                <input type="number"
+                                       step="0.001" min="0"
+                                       id="perimeter_worst"
+                                       name="perimeter_worst"
+                                       class="input-clinico {% if form.perimeter_worst.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 184.60"
+                                       value="{{ form.perimeter_worst.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 50 – 251
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Área Peor -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="area_worst">
+                                    <span class="label-num">2</span>
+                                    Área Peor
+                                    <span class="label-tecnico">area_worst</span>
+                                </label>
+                                <input type="number"
+                                       step="0.001" min="0"
+                                       id="area_worst"
+                                       name="area_worst"
+                                       class="input-clinico {% if form.area_worst.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 2019.0"
+                                       value="{{ form.area_worst.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 185 – 4254
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Radio Peor -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="radius_worst">
+                                    <span class="label-num">3</span>
+                                    Radio Peor
+                                    <span class="label-tecnico">radius_worst</span>
+                                </label>
+                                <input type="number"
+                                       step="0.001" min="0"
+                                       id="radius_worst"
+                                       name="radius_worst"
+                                       class="input-clinico {% if form.radius_worst.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 25.38"
+                                       value="{{ form.radius_worst.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 7.9 – 36.0
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Puntos Cóncavos Peor -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="concave_points_worst">
+                                    <span class="label-num">5</span>
+                                    Puntos Cóncavos Peor
+                                    <span class="label-tecnico">concave_points_worst</span>
+                                </label>
+                                <input type="number"
+                                       step="0.0001" min="0" max="1"
+                                       id="concave_points_worst"
+                                       name="concave_points_worst"
+                                       class="input-clinico {% if form.concave_points_worst.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 0.2654"
+                                       value="{{ form.concave_points_worst.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 0 – 0.29
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /row medidas peor -->
+
+                    <!-- ── SECCIÓN: Medidas "Promedio" ── -->
+                    <div class="seccion-titulo mt-2">
+                        <span>Características de Valor Promedio (Mean)</span>
+                    </div>
+
+                    <div class="row g-3">
+
+                        <!-- 4. Puntos Cóncavos Promedio -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="concave_points_mean">
+                                    <span class="label-num">4</span>
+                                    Puntos Cóncavos Promedio
+                                    <span class="label-tecnico">concave_points_mean</span>
+                                </label>
+                                <input type="number"
+                                       step="0.0001" min="0" max="1"
+                                       id="concave_points_mean"
+                                       name="concave_points_mean"
+                                       class="input-clinico {% if form.concave_points_mean.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 0.1471"
+                                       value="{{ form.concave_points_mean.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 0 – 0.20
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 6. Concavidad Promedio -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="concavity_mean">
+                                    <span class="label-num">6</span>
+                                    Concavidad Promedio
+                                    <span class="label-tecnico">concavity_mean</span>
+                                </label>
+                                <input type="number"
+                                       step="0.0001" min="0" max="1"
+                                       id="concavity_mean"
+                                       name="concavity_mean"
+                                       class="input-clinico {% if form.concavity_mean.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 0.3001"
+                                       value="{{ form.concavity_mean.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 0 – 0.43
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 7. Perímetro Promedio -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="perimeter_mean">
+                                    <span class="label-num">7</span>
+                                    Perímetro Promedio
+                                    <span class="label-tecnico">perimeter_mean</span>
+                                </label>
+                                <input type="number"
+                                       step="0.001" min="0"
+                                       id="perimeter_mean"
+                                       name="perimeter_mean"
+                                       class="input-clinico {% if form.perimeter_mean.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 122.80"
+                                       value="{{ form.perimeter_mean.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 43 – 189
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 8. Área Promedio -->
+                        <div class="col-12 col-sm-6">
+                            <div class="grupo-caracteristica">
+                                <label class="label-caracteristica" for="area_mean">
+                                    <span class="label-num">8</span>
+                                    Área Promedio
+                                    <span class="label-tecnico">area_mean</span>
+                                </label>
+                                <input type="number"
+                                       step="0.001" min="0"
+                                       id="area_mean"
+                                       name="area_mean"
+                                       class="input-clinico {% if form.area_mean.errors %}is-invalid{% endif %}"
+                                       placeholder="Ej: 1001.0"
+                                       value="{{ form.area_mean.value|default:'' }}"
+                                       required>
+                                <div class="input-hint">
+                                    <i class="fa-regular fa-circle-question"></i> Rango típico: 143 – 2501
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /row medidas promedio -->
+
+                    <!-- ── Botones de acción ── -->
+                    <hr style="border-color:var(--gris-borde); margin: 1.8rem 0 1.5rem;">
+
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-4">
+                            <button type="button" class="btn-limpiar" onclick="document.getElementById('formDiagnostico').reset()">
+                                <i class="fa-solid fa-rotate-left me-2"></i>Limpiar Campos
+                            </button>
+                        </div>
+                        <div class="col-12 col-sm-8">
+                            <button type="submit" class="btn-submit-ia">
+                                <i class="fa-solid fa-brain"></i>
+                                Ejecutar Análisis IA
+                                <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div><!-- /form-card-body -->
+        </div><!-- /form-card -->
+    </div><!-- /col derecha -->
+
+</div><!-- /row -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación básica en el cliente antes de enviar
+document.getElementById('formDiagnostico').addEventListener('submit', function(e) {
+    const campos = this.querySelectorAll('input[required]');
+    let valido = true;
+    campos.forEach(campo => {
+        if (!campo.value.trim()) {
+            campo.classList.add('is-invalid');
+            valido = false;
+        } else {
+            campo.classList.remove('is-invalid');
+        }
+    });
+    if (!valido) {
+        e.preventDefault();
+        // Desplaza al primer campo inválido
+        const primero = this.querySelector('.is-invalid');
+        if (primero) primero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+// Quitar marcado de inválido al escribir
+document.querySelectorAll('.input-clinico').forEach(input => {
+    input.addEventListener('input', function() {
+        this.classList.remove('is-invalid');
+    });
+});
+</script>
+{% endblock %}

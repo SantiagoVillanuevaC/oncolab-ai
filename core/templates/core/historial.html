@@ -1,0 +1,263 @@
+{% extends "core/base.html" %}
+
+{% block title %}Historial de Pacientes — OncoLab AI{% endblock %}
+
+{% block nav_historial %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .historial-header-card {
+        background: linear-gradient(135deg, #0D47A1, #1E88E5);
+        border-radius: 16px;
+        padding: 1.8rem 2rem;
+        color: #fff;
+        margin-bottom: 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        box-shadow: 0 6px 28px rgba(13,71,161,.28);
+    }
+
+    .historial-header-icon {
+        width: 60px; height: 60px;
+        background: rgba(255,255,255,.15);
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .historial-header-info h2 {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin: 0 0 .3rem;
+    }
+
+    .historial-header-info p {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,.75);
+        margin: 0;
+    }
+
+    .historial-stats {
+        margin-left: auto;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        text-align: center;
+        background: rgba(255,255,255,.15);
+        border-radius: 12px;
+        padding: .7rem 1.2rem;
+        border: 1px solid rgba(255,255,255,.2);
+    }
+
+    .stat-num {
+        font-family: 'Syne', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #fff;
+        display: block;
+        line-height: 1;
+    }
+
+    .stat-lbl {
+        font-size: 0.68rem;
+        color: rgba(255,255,255,.7);
+        text-transform: uppercase;
+        letter-spacing: .8px;
+        font-weight: 600;
+    }
+
+    /* Tabla */
+    .tabla-wrapper {
+        background: var(--blanco);
+        border: 1px solid var(--gris-borde);
+        border-radius: 14px;
+        box-shadow: var(--sombra-card);
+        overflow: hidden;
+    }
+
+    .tabla-toolbar {
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid var(--gris-borde);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .8rem;
+        background: #F8FAFF;
+    }
+
+    .tabla-toolbar h5 {
+        font-family: 'Syne', sans-serif;
+        font-size: .95rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--texto-principal);
+    }
+
+    .tabla-toolbar h5 i { color: var(--azul-medico); }
+
+    .table-oncolab { margin: 0; font-size: .88rem; }
+
+    .table-oncolab thead th {
+        background: #F8FAFF;
+        color: var(--texto-secundario);
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .8px;
+        border-bottom: 2px solid var(--gris-borde);
+        padding: .85rem 1.2rem;
+        white-space: nowrap;
+    }
+
+    .table-oncolab tbody td {
+        padding: .9rem 1.2rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F0F2F5;
+        color: var(--texto-principal);
+    }
+
+    .table-oncolab tbody tr:last-child td { border-bottom: none; }
+    .table-oncolab tbody tr:hover td { background: #F8FAFF; }
+
+    .badge-benigno {
+        background: var(--verde-claro); color: var(--verde-exito);
+        font-size: .74rem; font-weight: 700; padding: 4px 10px;
+        border-radius: 20px; border: 1px solid #A5D6A7;
+        display: inline-flex; align-items: center; gap: 5px;
+    }
+
+    .badge-maligno {
+        background: var(--rojo-claro); color: var(--rojo-alerta);
+        font-size: .74rem; font-weight: 700; padding: 4px 10px;
+        border-radius: 20px; border: 1px solid #EF9A9A;
+        display: inline-flex; align-items: center; gap: 5px;
+    }
+
+    .btn-ver {
+        font-size: .78rem; padding: 4px 12px;
+        border-radius: 7px; font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb breadcrumb-oncolab">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fa-solid fa-house me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item active">Historial de Pacientes</li>
+    </ol>
+</nav>
+
+<!-- Header con estadísticas -->
+<div class="historial-header-card">
+    <div class="historial-header-icon">
+        <i class="fa-solid fa-folder-open"></i>
+    </div>
+    <div class="historial-header-info">
+        <h2>Historial de Diagnósticos</h2>
+        <p>Registro completo de análisis realizados por el sistema OncoLab AI</p>
+    </div>
+    <div class="historial-stats">
+        <div class="stat-item">
+            <span class="stat-num">{{ total|default:"0" }}</span>
+            <span class="stat-lbl">Total</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-num" style="color:#A5D6A7;">
+                {% with benignos=diagnosticos|length %}{{ benignos }}{% endwith %}
+            </span>
+            <span class="stat-lbl">Benignos</span>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla historial -->
+<div class="tabla-wrapper">
+    <div class="tabla-toolbar">
+        <h5>
+            <i class="fa-solid fa-list-check"></i>
+            Todos los Diagnósticos
+        </h5>
+        <a href="{% url 'nuevo_diagnostico' %}" class="btn btn-primary btn-sm"
+           style="border-radius:8px; font-weight:600; font-size:.82rem;">
+            <i class="fa-solid fa-plus me-1"></i> Nuevo Diagnóstico
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-oncolab">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th><i class="fa-regular fa-calendar me-1"></i>Fecha y Hora</th>
+                    <th><i class="fa-solid fa-id-card me-1"></i>ID Paciente</th>
+                    <th><i class="fa-solid fa-circle-dot me-1"></i>Resultado</th>
+                    <th><i class="fa-solid fa-brain me-1"></i>Modelo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for diag in diagnosticos %}
+                <tr>
+                    <td style="color:#9E9E9E; font-size:.82rem;">{{ forloop.counter }}</td>
+                    <td>
+                        <span style="font-weight:600;">{{ diag.fecha|date:"d/m/Y" }}</span><br>
+                        <span style="font-size:.75rem; color:#9E9E9E;">{{ diag.fecha|time:"H:i" }}</span>
+                    </td>
+                    <td>
+                        <code style="background:#F0F4FF; color:#1565C0; padding:3px 8px; border-radius:5px; font-size:.82rem;">
+                            #{{ diag.id_paciente }}
+                        </code>
+                    </td>
+                    <td>
+                        {% if diag.resultado == "Benigno" %}
+                            <span class="badge-benigno">
+                                <i class="fa-solid fa-circle-check"></i> Benigno
+                            </span>
+                        {% else %}
+                            <span class="badge-maligno">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Maligno
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:.8rem; color:var(--texto-secundario);">
+                        <i class="fa-solid fa-brain me-1" style="color:var(--azul-medico);"></i>K-Means (k=2)
+                    </td>
+                    <td>
+                        <a href="{% url 'resultado' diag.id %}" class="btn btn-outline-primary btn-ver">
+                            <i class="fa-solid fa-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:3rem; color:var(--texto-secundario);">
+                        <i class="fa-solid fa-folder-open d-block mb-3" style="font-size:3rem; color:var(--gris-borde);"></i>
+                        <p style="font-weight:600; margin-bottom:.4rem;">Sin diagnósticos registrados</p>
+                        <a href="{% url 'nuevo_diagnostico' %}" class="btn btn-ia mt-2">
+                            <i class="fa-solid fa-microscope me-2"></i> Realizar Primer Diagnóstico
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

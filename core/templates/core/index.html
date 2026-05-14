@@ -1,0 +1,462 @@
+{% extends "core/base.html" %}
+
+{% block title %}Dashboard — OncoLab AI{% endblock %}
+
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ─── Banner Hero ─── */
+    .hero-banner {
+        background: linear-gradient(135deg, #0D47A1 0%, #1565C0 55%, #1E88E5 100%);
+        border-radius: 16px;
+        padding: 2.4rem 2.5rem;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        box-shadow: 0 6px 30px rgba(13,71,161,.28);
+    }
+
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 260px; height: 260px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.07);
+    }
+
+    .hero-banner::after {
+        content: '';
+        position: absolute;
+        bottom: -40px; left: 30%;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.05);
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        background: rgba(255,255,255,.18);
+        border: 1px solid rgba(255,255,255,.3);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .hero-titulo {
+        font-family: 'Syne', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: #fff;
+        margin-bottom: 0.7rem;
+        line-height: 1.2;
+    }
+
+    .hero-desc {
+        color: rgba(255,255,255,.8);
+        font-size: 0.93rem;
+        line-height: 1.65;
+        max-width: 540px;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #fff;
+        color: var(--azul-medico);
+        font-weight: 700;
+        font-size: 0.92rem;
+        padding: 0.65rem 1.6rem;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: box-shadow .2s, transform .2s;
+        box-shadow: 0 4px 15px rgba(0,0,0,.18);
+    }
+
+    .hero-cta:hover {
+        color: var(--azul-medico);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 22px rgba(0,0,0,.22);
+    }
+
+    .hero-img-icon {
+        font-size: 6rem;
+        color: rgba(255,255,255,.12);
+        position: absolute;
+        right: 2.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* ─── Tarjetas de Métricas ─── */
+    .card-metrica {
+        background: var(--blanco);
+        border: 1px solid var(--gris-borde);
+        border-radius: 14px;
+        padding: 1.5rem 1.4rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        box-shadow: var(--sombra-card);
+        transition: box-shadow .25s, transform .25s;
+        height: 100%;
+    }
+
+    .card-metrica:hover {
+        box-shadow: 0 8px 28px rgba(21,101,192,.15);
+        transform: translateY(-3px);
+    }
+
+    .metrica-icono {
+        width: 52px; height: 52px;
+        border-radius: 13px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    .metrica-icono.azul   { background: #E3F2FD; color: #1565C0; }
+    .metrica-icono.verde  { background: #E8F5E9; color: #2E7D32; }
+    .metrica-icono.naranja{ background: #FFF3E0; color: #E65100; }
+
+    .metrica-valor {
+        font-family: 'Syne', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--texto-principal);
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+
+    .metrica-label {
+        font-size: 0.83rem;
+        font-weight: 600;
+        color: var(--texto-secundario);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .metrica-sub {
+        font-size: 0.75rem;
+        color: #9E9E9E;
+        margin-top: 0.25rem;
+    }
+
+    /* ─── Barra de progreso métrica ─── */
+    .metrica-progress {
+        height: 5px;
+        border-radius: 10px;
+        background: var(--gris-borde);
+        margin-top: 0.7rem;
+        overflow: hidden;
+    }
+
+    .metrica-progress-bar {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 1.2s ease;
+    }
+
+    /* ─── Tabla últimos diagnósticos ─── */
+    .tabla-wrapper {
+        background: var(--blanco);
+        border: 1px solid var(--gris-borde);
+        border-radius: 14px;
+        box-shadow: var(--sombra-card);
+        overflow: hidden;
+    }
+
+    .tabla-header {
+        padding: 1.3rem 1.5rem 1rem;
+        border-bottom: 1px solid var(--gris-borde);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+
+    .tabla-titulo {
+        font-family: 'Syne', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--texto-principal);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tabla-titulo i { color: var(--azul-medico); }
+
+    .table-oncolab {
+        margin: 0;
+        font-size: 0.88rem;
+    }
+
+    .table-oncolab thead th {
+        background: #F8FAFF;
+        color: var(--texto-secundario);
+        font-size: 0.73rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        border-bottom: 2px solid var(--gris-borde);
+        padding: 0.85rem 1.2rem;
+        white-space: nowrap;
+    }
+
+    .table-oncolab tbody td {
+        padding: 0.9rem 1.2rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F0F2F5;
+        color: var(--texto-principal);
+    }
+
+    .table-oncolab tbody tr:last-child td { border-bottom: none; }
+
+    .table-oncolab tbody tr:hover td { background: #F8FAFF; }
+
+    .badge-benigno {
+        background: var(--verde-claro);
+        color: var(--verde-exito);
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        border: 1px solid #A5D6A7;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .badge-maligno {
+        background: var(--rojo-claro);
+        color: var(--rojo-alerta);
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        border: 1px solid #EF9A9A;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-accion {
+        font-size: 0.78rem;
+        padding: 4px 12px;
+        border-radius: 7px;
+        font-weight: 600;
+    }
+
+    .tabla-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--texto-secundario);
+    }
+
+    .tabla-empty i { font-size: 3rem; color: var(--gris-borde); margin-bottom: 1rem; }
+
+    /* ─── Info de algoritmo ─── */
+    .info-algoritmo {
+        background: var(--azul-suave);
+        border: 1px solid #BBDEFB;
+        border-radius: 12px;
+        padding: 1.2rem 1.4rem;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+    .info-algoritmo i { color: var(--azul-medico); font-size: 1.1rem; margin-top: 2px; flex-shrink: 0; }
+
+    .info-algoritmo p { margin: 0; font-size: 0.85rem; color: #1A237E; line-height: 1.6; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ══ HERO BANNER ══ -->
+<div class="hero-banner">
+    <span class="hero-badge">
+        <i class="fa-solid fa-circle" style="color:#69F0AE; font-size:.45rem;"></i>
+        Sistema Activo — K-Means Clustering
+    </span>
+    <h1 class="hero-titulo">
+        Diagnóstico Mamario<br>Asistido por Inteligencia Artificial
+    </h1>
+    <p class="hero-desc">
+        Plataforma académica basada en el <strong style="color:#fff;">Wisconsin Breast Cancer Dataset</strong>.
+        Utiliza Machine Learning (K-Means + Random Forest) para clasificar masas mamarias como
+        <em>Benignas</em> o <em>Malignas</em> a partir de características citológicas.
+    </p>
+    <a href="{% url 'nuevo_diagnostico' %}" class="hero-cta">
+        <i class="fa-solid fa-microscope"></i> Iniciar Nuevo Diagnóstico
+    </a>
+    <i class="fa-solid fa-dna hero-img-icon d-none d-lg-block"></i>
+</div>
+
+<!-- ══ AVISO INFORMATIVO ══ -->
+<div class="info-algoritmo">
+    <i class="fa-solid fa-circle-info"></i>
+    <p>
+        <strong>Modelo utilizado:</strong> K-Means Clustering (k=2) entrenado con el dataset de Wisconsin.
+        Las 8 características de entrada fueron seleccionadas mediante Random Forest (importancia de variables).
+        <strong>Este sistema es exclusivamente de apoyo diagnóstico académico y no reemplaza el criterio médico profesional.</strong>
+    </p>
+</div>
+
+<!-- ══ TARJETAS DE MÉTRICAS ══ -->
+<div class="row g-3 mb-4">
+
+    <!-- Métricas: Diagnósticos realizados -->
+    <div class="col-12 col-md-4">
+        <div class="card-metrica">
+            <div class="metrica-icono azul">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="metrica-valor">{{ total_diagnosticos|default:"0" }}</div>
+                <div class="metrica-label">Diagnósticos Realizados</div>
+                <div class="metrica-sub">Total acumulado en el sistema</div>
+                <div class="metrica-progress">
+                    <div class="metrica-progress-bar" style="width: 40%; background: #1565C0;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métrica: Silhouette Score -->
+    <div class="col-12 col-md-4">
+        <div class="card-metrica">
+            <div class="metrica-icono verde">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="metrica-valor">0.50</div>
+                <div class="metrica-label">Precisión del Modelo</div>
+                <div class="metrica-sub">Silhouette Score (rango: -1 a 1)</div>
+                <div class="metrica-progress">
+                    <div class="metrica-progress-bar" style="width: 50%; background: #2E7D32;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métrica: Gap Statistic -->
+    <div class="col-12 col-md-4">
+        <div class="card-metrica">
+            <div class="metrica-icono naranja">
+                <i class="fa-solid fa-shield-heart"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="metrica-valor">0.67</div>
+                <div class="metrica-label">Confiabilidad del Modelo</div>
+                <div class="metrica-sub">Gap Statistic (validación de clústeres)</div>
+                <div class="metrica-progress">
+                    <div class="metrica-progress-bar" style="width: 67%; background: #E65100;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ TABLA ÚLTIMOS DIAGNÓSTICOS ══ -->
+<div class="tabla-wrapper">
+    <div class="tabla-header">
+        <h5 class="tabla-titulo">
+            <i class="fa-solid fa-list-check"></i>
+            Últimos Diagnósticos Registrados
+        </h5>
+        <a href="{% url 'historial' %}" class="btn btn-outline-primary btn-sm" style="border-radius:8px; font-weight:600; font-size:.82rem;">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Ver Historial Completo
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-oncolab">
+            <thead>
+                <tr>
+                    <th><i class="fa-regular fa-calendar me-1"></i>Fecha y Hora</th>
+                    <th><i class="fa-solid fa-id-card me-1"></i>ID Paciente</th>
+                    <th><i class="fa-solid fa-vial me-1"></i>Características Ingresadas</th>
+                    <th><i class="fa-solid fa-circle-dot me-1"></i>Resultado Sugerido</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if ultimos_diagnosticos %}
+                    {% for diag in ultimos_diagnosticos %}
+                    <tr>
+                        <td>
+                            <span style="font-weight:600;">{{ diag.fecha|date:"d/m/Y" }}</span><br>
+                            <span style="font-size:.78rem; color:#9E9E9E;">{{ diag.fecha|time:"H:i" }}</span>
+                        </td>
+                        <td>
+                            <code style="background:#F0F4FF; color:#1565C0; padding:3px 8px; border-radius:5px; font-size:.82rem;">
+                                #{{ diag.id_paciente }}
+                            </code>
+                        </td>
+                        <td>
+                            <span style="color:var(--texto-secundario); font-size:.82rem;">
+                                8 características citológicas
+                            </span>
+                        </td>
+                        <td>
+                            {% if diag.resultado == "Benigno" %}
+                                <span class="badge-benigno">
+                                    <i class="fa-solid fa-circle-check"></i> Benigno
+                                </span>
+                            {% else %}
+                                <span class="badge-maligno">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Maligno
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'resultado' diag.id %}" class="btn btn-outline-primary btn-accion me-1">
+                                <i class="fa-solid fa-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <!-- Estado vacío -->
+                    <tr>
+                        <td colspan="5">
+                            <div class="tabla-empty">
+                                <i class="fa-solid fa-folder-open d-block mb-3"></i>
+                                <p style="font-weight:600; color:var(--texto-principal); margin-bottom:.4rem;">
+                                    No hay diagnósticos registrados aún
+                                </p>
+                                <p style="font-size:.83rem; margin-bottom:1.2rem;">
+                                    Comienza realizando el primer análisis con el botón de abajo.
+                                </p>
+                                <a href="{% url 'nuevo_diagnostico' %}" class="btn btn-ia">
+                                    <i class="fa-solid fa-microscope me-2"></i> Realizar Primer Diagnóstico
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,503 @@
+{% extends "core/base.html" %}
+
+{% block title %}Resultado del Análisis — OncoLab AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ─── Animación de entrada ─── */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .anim-1 { animation: fadeUp .5s ease both; }
+    .anim-2 { animation: fadeUp .5s ease .12s both; }
+    .anim-3 { animation: fadeUp .5s ease .24s both; }
+    .anim-4 { animation: fadeUp .5s ease .36s both; }
+
+    /* ─── Contenedor centrado del resultado ─── */
+    .resultado-wrapper {
+        max-width: 780px;
+        margin: 0 auto;
+    }
+
+    /* ─── Tarjeta principal de resultado ─── */
+    .card-resultado {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0,0,0,.12);
+        border: none;
+    }
+
+    /* Encabezado dinámico según resultado */
+    .resultado-header {
+        padding: 2.5rem 2rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .resultado-header.benigno {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 55%, #388E3C 100%);
+    }
+
+    .resultado-header.maligno {
+        background: linear-gradient(135deg, #7F0000 0%, #C62828 55%, #D32F2F 100%);
+    }
+
+    .resultado-header::before {
+        content: '';
+        position: absolute;
+        top: -70px; right: -70px;
+        width: 240px; height: 240px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.07);
+    }
+
+    .resultado-header::after {
+        content: '';
+        position: absolute;
+        bottom: -50px; left: 10%;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.05);
+    }
+
+    .resultado-icono-grande {
+        font-size: 4.5rem;
+        color: rgba(255,255,255,.9);
+        margin-bottom: 1rem;
+        display: block;
+        position: relative;
+    }
+
+    .resultado-grupo-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: rgba(255,255,255,.7);
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+        position: relative;
+    }
+
+    .resultado-diagnostico {
+        font-family: 'Syne', sans-serif;
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: #fff;
+        margin-bottom: 0.5rem;
+        line-height: 1.1;
+        position: relative;
+    }
+
+    .resultado-cluster {
+        color: rgba(255,255,255,.75);
+        font-size: 0.88rem;
+        position: relative;
+    }
+
+    /* ─── Cuerpo de la tarjeta ─── */
+    .resultado-body {
+        background: var(--blanco);
+        padding: 2rem;
+    }
+
+    /* ─── Chips de valores ingresados ─── */
+    .datos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dato-chip {
+        background: #F8FAFF;
+        border: 1px solid #E3EBF8;
+        border-radius: 10px;
+        padding: 0.7rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dato-chip-num {
+        background: var(--azul-suave);
+        color: var(--azul-medico);
+        font-size: 0.65rem;
+        font-weight: 700;
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .dato-chip-info { flex: 1; }
+
+    .dato-chip-label {
+        font-size: 0.7rem;
+        color: var(--texto-secundario);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: block;
+    }
+
+    .dato-chip-valor {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--texto-principal);
+        font-family: 'Courier New', monospace;
+    }
+
+    /* ─── Sección interpretación ─── */
+    .interpretacion-card {
+        border-radius: 12px;
+        padding: 1.3rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+    }
+
+    .interpretacion-card.benigno {
+        background: #E8F5E9;
+        border: 1px solid #A5D6A7;
+    }
+
+    .interpretacion-card.maligno {
+        background: #FFEBEE;
+        border: 1px solid #EF9A9A;
+    }
+
+    .interpretacion-card i.icono {
+        font-size: 1.4rem;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .interpretacion-card.benigno i.icono { color: var(--verde-exito); }
+    .interpretacion-card.maligno i.icono { color: var(--rojo-alerta); }
+
+    .interpretacion-titulo {
+        font-family: 'Syne', sans-serif;
+        font-size: 0.98rem;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+    }
+
+    .benigno .interpretacion-titulo { color: #1B5E20; }
+    .maligno .interpretacion-titulo { color: #7F0000; }
+
+    .interpretacion-texto {
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: var(--texto-principal);
+        margin: 0;
+    }
+
+    /* ─── Advertencia médica ─── */
+    .aviso-medico {
+        background: #FFF8E1;
+        border: 1px solid #FFD54F;
+        border-radius: 12px;
+        padding: 1rem 1.3rem;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        font-size: 0.82rem;
+        color: #4E342E;
+        line-height: 1.55;
+    }
+
+    .aviso-medico i { color: #F9A825; margin-top: 2px; flex-shrink: 0; }
+
+    /* ─── Meta información ─── */
+    .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.8rem;
+        padding: 1.2rem 1.5rem;
+        background: #F8FAFF;
+        border-radius: 12px;
+        border: 1px solid #E3EBF8;
+        margin-bottom: 1.5rem;
+    }
+
+    .meta-item { text-align: center; }
+
+    .meta-item-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--texto-secundario);
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+
+    .meta-item-valor {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--texto-principal);
+    }
+
+    /* ─── Botones de acción ─── */
+    .acciones-reporte {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-accion-principal {
+        flex: 1;
+        min-width: 200px;
+        background: linear-gradient(135deg, #0D47A1, #1E88E5);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.8rem 1.5rem;
+        text-align: center;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 15px rgba(13,71,161,.3);
+        transition: all .2s;
+    }
+
+    .btn-accion-principal:hover {
+        color: #fff;
+        box-shadow: 0 6px 22px rgba(13,71,161,.45);
+        transform: translateY(-2px);
+    }
+
+    .btn-accion-secundario {
+        flex: 1;
+        min-width: 180px;
+        background: transparent;
+        color: var(--azul-medico);
+        border: 2px solid var(--azul-medico);
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.5rem;
+        text-align: center;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all .2s;
+    }
+
+    .btn-accion-secundario:hover {
+        background: var(--azul-suave);
+        color: var(--azul-medico);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 576px) {
+        .resultado-diagnostico { font-size: 2rem; }
+        .resultado-body { padding: 1.5rem; }
+        .acciones-reporte { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb breadcrumb-oncolab">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fa-solid fa-house me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'nuevo_diagnostico' %}">Nuevo Diagnóstico</a></li>
+        <li class="breadcrumb-item active">Resultado del Análisis</li>
+    </ol>
+</nav>
+
+<div class="resultado-wrapper">
+
+    <!-- ══ TARJETA PRINCIPAL DE RESULTADO ══ -->
+    <div class="card-resultado anim-1">
+
+        <!-- Header dinámico (verde si benigno, rojo si maligno) -->
+        <div class="resultado-header {% if resultado == 'Benigno' %}benigno{% else %}maligno{% endif %}">
+
+            {% if resultado == "Benigno" %}
+                <i class="fa-solid fa-circle-check resultado-icono-grande"></i>
+            {% else %}
+                <i class="fa-solid fa-triangle-exclamation resultado-icono-grande"></i>
+            {% endif %}
+
+            <p class="resultado-grupo-label">
+                Clasificación del Modelo K-Means — Wisconsin Dataset
+            </p>
+            <h1 class="resultado-diagnostico">
+                {{ resultado|default:"Benigno" }}
+            </h1>
+            <p class="resultado-cluster">
+                Clúster asignado: {{ cluster|default:"0" }} &nbsp;·&nbsp;
+                Confiabilidad (Gap Statistic): 0.67 &nbsp;·&nbsp;
+                Silhouette Score: 0.50
+            </p>
+
+        </div><!-- /resultado-header -->
+
+        <!-- Cuerpo del reporte -->
+        <div class="resultado-body">
+
+            <!-- Meta información del análisis -->
+            <div class="meta-grid anim-2">
+                <div class="meta-item">
+                    <div class="meta-item-label"><i class="fa-regular fa-calendar me-1"></i>Fecha de Análisis</div>
+                    <div class="meta-item-valor">{{ fecha|default:"--" }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-item-label"><i class="fa-solid fa-id-badge me-1"></i>ID Paciente</div>
+                    <div class="meta-item-valor" style="font-family:monospace; color:var(--azul-medico);">
+                        {{ id_paciente|default:"N/A" }}
+                    </div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-item-label"><i class="fa-solid fa-brain me-1"></i>Algoritmo</div>
+                    <div class="meta-item-valor">K-Means (k=2)</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-item-label"><i class="fa-solid fa-database me-1"></i>Dataset</div>
+                    <div class="meta-item-valor">Wisconsin BC</div>
+                </div>
+            </div>
+
+            <!-- Datos ingresados -->
+            <h6 style="font-family:'Syne',sans-serif; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--texto-secundario); margin-bottom:1rem;">
+                <i class="fa-solid fa-vial me-2" style="color:var(--azul-medico);"></i>
+                Características Citológicas Analizadas
+            </h6>
+
+            <div class="datos-grid anim-2">
+                <div class="dato-chip">
+                    <span class="dato-chip-num">1</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Perímetro Peor</span>
+                        <span class="dato-chip-valor">{{ datos.perimeter_worst|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="dato-chip">
+                    <span class="dato-chip-num">2</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Área Peor</span>
+                        <span class="dato-chip-valor">{{ datos.area_worst|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="dato-chip">
+                    <span class="dato-chip-num">3</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Radio Peor</span>
+                        <span class="dato-chip-valor">{{ datos.radius_worst|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="dato-chip">
+                    <span class="dato-chip-num">4</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Pts. Cóncavos Prom.</span>
+                        <span class="dato-chip-valor">{{ datos.concave_points_mean|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="dato-chip">
+                    <span class="dato-chip-num">5</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Pts. Cóncavos Peor</span>
+                        <span class="dato-chip-valor">{{ datos.concave_points_worst|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="dato-chip">
+                    <span class="dato-chip-num">6</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Concavidad Prom.</span>
+                        <span class="dato-chip-valor">{{ datos.concavity_mean|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="dato-chip">
+                    <span class="dato-chip-num">7</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Perímetro Promedio</span>
+                        <span class="dato-chip-valor">{{ datos.perimeter_mean|default:"—" }}</span>
+                    </div>
+                </div>
+                <div class="dato-chip">
+                    <span class="dato-chip-num">8</span>
+                    <div class="dato-chip-info">
+                        <span class="dato-chip-label">Área Promedio</span>
+                        <span class="dato-chip-valor">{{ datos.area_mean|default:"—" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interpretación clínica del resultado -->
+            <div class="interpretacion-card {% if resultado == 'Benigno' %}benigno{% else %}maligno{% endif %} anim-3">
+                {% if resultado == "Benigno" %}
+                    <i class="fa-solid fa-circle-check icono"></i>
+                    <div>
+                        <div class="interpretacion-titulo">Clasificación: Masa Benigna (Clúster 0)</div>
+                        <p class="interpretacion-texto">
+                            El modelo K-Means clasificó esta muestra en el <strong>Clúster 0</strong>, correspondiente a
+                            características citológicas de <strong>masas benignas</strong>.
+                            Los valores ingresados presentan métricas nucleares que el algoritmo asocia con
+                            tejido no canceroso según el patrón del Wisconsin Breast Cancer Dataset.
+                            Sin embargo, este resultado es <em>únicamente orientativo y de apoyo académico</em>.
+                        </p>
+                    </div>
+                {% else %}
+                    <i class="fa-solid fa-triangle-exclamation icono"></i>
+                    <div>
+                        <div class="interpretacion-titulo">Clasificación: Masa Maligna (Clúster 1)</div>
+                        <p class="interpretacion-texto">
+                            El modelo K-Means clasificó esta muestra en el <strong>Clúster 1</strong>, correspondiente a
+                            características citológicas asociadas a <strong>masas malignas</strong>.
+                            Los valores muestran métricas nucleares (tamaño, concavidad y forma) consistentes con
+                            el patrón de malignidad del Wisconsin Breast Cancer Dataset.
+                            Es <strong>imprescindible</strong> que este hallazgo sea evaluado por un médico especialista.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Aviso médico obligatorio -->
+            <div class="aviso-medico anim-3">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div>
+                    <strong>Aviso Importante:</strong> Este sistema es una herramienta de apoyo diagnóstico
+                    desarrollada con fines académicos. <strong>No reemplaza el diagnóstico médico profesional.</strong>
+                    Los resultados deben ser validados por un médico especialista (oncólogo o radiólogo).
+                    El modelo presenta un Silhouette Score de <strong>0.50</strong> y su uso fuera del
+                    contexto académico no está recomendado.
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="acciones-reporte anim-4">
+                <a href="{% url 'nuevo_diagnostico' %}" class="btn-accion-principal">
+                    <i class="fa-solid fa-microscope"></i>
+                    Nuevo Diagnóstico
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn-accion-secundario">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    Volver al Dashboard
+                </a>
+                <a href="{% url 'historial' %}" class="btn-accion-secundario">
+                    <i class="fa-solid fa-folder-open"></i>
+                    Ver Historial
+                </a>
+            </div>
+
+        </div><!-- /resultado-body -->
+    </div><!-- /card-resultado -->
+
+</div><!-- /resultado-wrapper -->
+
+{% endblock %}
